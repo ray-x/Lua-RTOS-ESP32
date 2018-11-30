@@ -61,6 +61,7 @@
 #include "net_service_sntp.inc"
 #include "net_service_http.inc"
 #include "net_service_curl.inc"
+#include "net_service_lcurl.inc"
 #include "net_service_captivedns.inc"
 #include "net_service_mdns.inc"
 #include "net_service_can.inc"
@@ -420,6 +421,7 @@ static const LUA_REG_TYPE net_map[] = {
 
 #if CONFIG_LUA_RTOS_LUA_USE_CURL_NET
     { LSTRKEY( "curl" ), LROVAL ( curl_map ) },
+    { LSTRKEY( "lcurl" ), LROVAL ( lcurl_map ) },
 #endif
 
     { LSTRKEY( "service" ), LROVAL ( service_map ) },

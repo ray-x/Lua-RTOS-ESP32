@@ -7,17 +7,17 @@
 *
 * This file is part of lua-lcurl library.
 ******************************************************************************/
+#if CONFIG_LUA_RTOS_LUA_USE_CURL_NET
 
-#include "lcurl.h"
-#include "lceasy.h"
-#include "lcmulti.h"
-#include "lcshare.h"
-#include "lcerror.h"
-#include "lchttppost.h"
-#include "lcmime.h"
-#include "lcutils.h"
+#include "Lua-cURLv3/src/lcurl.h"
+#include "Lua-cURLv3/src/lceasy.h"
+#include "Lua-cURLv3/src/lcmulti.h"
+#include "Lua-cURLv3/src/lcshare.h"
+#include "Lua-cURLv3/src/lcerror.h"
+#include "Lua-cURLv3/src/lchttppost.h"
+#include "Lua-cURLv3/src/lcmime.h"
+#include "Lua-cURLv3/src/lcutils.h"
 
-/*export*/
 #ifdef _WIN32
 #  define LCURL_EXPORT_API __declspec(dllexport)
 #else
@@ -164,121 +164,16 @@ static int lcurl_version_info(lua_State *L){
   return 1;
 }
 
-const struct luaL_Reg lcurl_functions[] = {
-  {"error",           lcurl_error_new        },
-  {"form",            lcurl_hpost_new        },
-  {"easy",            lcurl_easy_new         },
-  {"multi",           lcurl_multi_new        },
-  {"share",           lcurl_share_new        },
-  {"version",         lcurl_version          },
-  {"version_info",    lcurl_version_info     },
-  
-  {NULL,NULL}
+static const LUA_REG_TYPE lcurl_map[] = {
+//lcurl
+        { LSTRKEY( "error"       ),	 LFUNCVAL( lcurl_error_new     ) },
+	{ LSTRKEY( "form"    ),	 LFUNCVAL( lcurl_hpost_new  ) },
+	{ LSTRKEY( "easy"   ),	 LFUNCVAL( lcurl_easy_new ) },
+	{ LSTRKEY( "multi"    ),	 LFUNCVAL( lcurl_multi_new  ) },
+	{ LSTRKEY( "share"   ),	 LFUNCVAL( lcurl_share_new ) },
+	{ LSTRKEY( "version"    ),	 LFUNCVAL( lcurl_version  ) },
+	{ LSTRKEY( "version_info"   ),	 LFUNCVAL( lcurl_version_info ) },
+	{ LNILKEY, LNILVAL }
 };
 
-const struct luaL_Reg lcurl_functions_safe[] = {
-  {"error",           lcurl_error_new             },
-  {"form",            lcurl_hpost_new_safe        },
-  {"easy",            lcurl_easy_new_safe         },
-  {"multi",           lcurl_multi_new_safe        },
-  {"share",           lcurl_share_new_safe        },
-  {"version",         lcurl_version               },
-  {"version_info",    lcurl_version_info          },
-
-  {NULL,NULL}
-};
-
-static const lcurl_const_t lcurl_flags[] = {
-
-#define FLG_ENTRY(N) { #N, CURL##N },
-#include "lcflags.h"
-#undef FLG_ENTRY
-
-  {NULL, 0}
-};
-
-static volatile int LCURL_INIT = 0;
-
-static const char* LCURL_REGISTRY = "LCURL Registry";
-static const char* LCURL_USERVAL  = "LCURL Uservalues";
-#if LCURL_CURL_VER_GE(7,56,0)
-static const char* LCURL_MIME_EASY_MAP  = "LCURL Mime easy";
 #endif
-
-#if LCURL_CURL_VER_GE(7,56,0)
-#define NUP 3
-#else
-#define NUP 2
-#endif
-
-#if LCURL_CURL_VER_GE(7,56,0)
-#define LCURL_PUSH_NUP(L) lua_pushvalue(L, -NUP-1);lua_pushvalue(L, -NUP-1);lua_pushvalue(L, -NUP-1);
-#else
-#define LCURL_PUSH_NUP(L) lua_pushvalue(L, -NUP-1);lua_pushvalue(L, -NUP-1);
-#endif
-
-static int luaopen_lcurl_(lua_State *L, const struct luaL_Reg *func){
-  if(!LCURL_INIT){
-    /* Note from libcurl documentation.
-     *
-     * The environment it sets up is constant for the life of the program
-     * and is the same for every program, so multiple calls have the same
-     * effect as one call. ... This function is not thread safe.
-     */
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    LCURL_INIT = 1;
-  }
-
-  lua_rawgetp(L, LUA_REGISTRYINDEX, LCURL_REGISTRY);
-  if(!lua_istable(L, -1)){ /* registry */
-    lua_pop(L, 1);
-    lua_newtable(L);
-  }
-
-  lua_rawgetp(L, LUA_REGISTRYINDEX, LCURL_USERVAL);
-  if(!lua_istable(L, -1)){ /* usevalues */
-    lua_pop(L, 1);
-    lcurl_util_new_weak_table(L, "k");
-  }
-
-#if LCURL_CURL_VER_GE(7,56,0)
-  lua_rawgetp(L, LUA_REGISTRYINDEX, LCURL_MIME_EASY_MAP);
-  if(!lua_istable(L, -1)){ /* Mime->Easy */
-    lua_pop(L, 1);
-    lcurl_util_new_weak_table(L, "v");
-  }
-#endif
-
-  lua_newtable(L); /* library  */
-
-  LCURL_PUSH_NUP(L); luaL_setfuncs(L, func, NUP);
-  LCURL_PUSH_NUP(L); lcurl_error_initlib(L, NUP);
-  LCURL_PUSH_NUP(L); lcurl_hpost_initlib(L, NUP);
-  LCURL_PUSH_NUP(L); lcurl_easy_initlib (L, NUP);
-  LCURL_PUSH_NUP(L); lcurl_mime_initlib (L, NUP);
-  LCURL_PUSH_NUP(L); lcurl_multi_initlib(L, NUP);
-  LCURL_PUSH_NUP(L); lcurl_share_initlib(L, NUP);
-
-  LCURL_PUSH_NUP(L);
-
-#if LCURL_CURL_VER_GE(7,56,0)
-  lua_rawsetp(L, LUA_REGISTRYINDEX, LCURL_MIME_EASY_MAP);
-#endif
-
-  lua_rawsetp(L, LUA_REGISTRYINDEX, LCURL_USERVAL);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, LCURL_REGISTRY);
-
-  lcurl_util_set_const(L, lcurl_flags);
-
-  lutil_push_null(L);
-  lua_setfield(L, -2, "null");
-
-  return 1;
-}
-
-LCURL_EXPORT_API
-int luaopen_lcurl(lua_State *L){ return luaopen_lcurl_(L, lcurl_functions); }
-
-LCURL_EXPORT_API
-int luaopen_lcurl_safe(lua_State *L){ return luaopen_lcurl_(L, lcurl_functions_safe); }
-

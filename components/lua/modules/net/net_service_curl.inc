@@ -1229,4 +1229,5 @@ static const LUA_REG_TYPE curl_map[] = {
 	{ LNILKEY, LNILVAL }
 };
 
+
 #endif
